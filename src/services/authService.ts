@@ -19,7 +19,6 @@ export interface AuthResponse {
   token_type?: string;
 }
 
-// Prepare deployment environment variable
 // Cookie utility functions
 const setCookie = (name: string, value: string, days: number = 7) => {
   const expires = new Date();

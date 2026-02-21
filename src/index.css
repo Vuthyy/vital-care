@@ -1,1 +1,22 @@
 @import "tailwindcss";
+
+.ios-gradient {
+  background: linear-gradient(135deg, #4f46e5 0%, #a855f7 100%);
+}
+
+.btn-gradient {
+  background: linear-gradient(90deg, #6366f1 0%, #a855f7 100%);
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+body {
+  font-family: "Inter", sans-serif;
+  min-height: max(884px, 100dvh);
+}

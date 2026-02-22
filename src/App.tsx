@@ -9,7 +9,7 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         {/* Auth (Public) */}
-        <Route path="/signin" element={<SignInPage />} />
+        <Route path="/" element={<SignInPage />} />
         <Route path="/signup" element={<SignUpPage />} />
 
         {/* Protected Routes */}

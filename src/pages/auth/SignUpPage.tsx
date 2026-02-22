@@ -102,7 +102,7 @@ export default function SignUpPage() {
         gender: formData.gender as Gender,
       });
 
-      navigate("/signin");
+      navigate("/");
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Registration failed";
       setError(msg);

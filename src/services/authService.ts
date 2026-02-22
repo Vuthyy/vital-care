@@ -42,6 +42,22 @@ const deleteCookie = (name: string) => {
 };
 
 // Register user
+type ApiError = {
+  message?: string;
+  error_code?: string;
+  status_code?: string;
+  response_data?: unknown;
+};
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function toApiError(value: unknown): ApiError | null {
+  return isRecord(value) ? (value as ApiError) : null;
+}
+
+// Register user
 export const registerUser = async (
   userData: RegisterRequest
 ): Promise<AuthResponse> => {
@@ -58,12 +74,28 @@ export const registerUser = async (
   );
 
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.message || "Registration failed");
+    const contentType = response.headers.get("content-type") || "";
+    let parsed: unknown = null;
+
+    if (contentType.includes("application/json")) {
+      parsed = await response.json().catch(() => null);
+    }
+
+    // Case 1: backend returns { message: "...", error_code: "...", ... }
+    const apiError = toApiError(parsed);
+    if (apiError?.message) throw new Error(apiError.message);
+
+    // Case 2: backend returns validation map like { email: "...", password: "..." }
+    if (isRecord(parsed)) {
+      const firstKey = Object.keys(parsed)[0];
+      const firstVal = firstKey ? parsed[firstKey] : undefined;
+      if (typeof firstVal === "string") throw new Error(firstVal);
+    }
+
+    throw new Error("Registration failed");
   }
 
-  const data: AuthResponse = await response.json();
-  return data;
+  return response.json();
 };
 
 // Login user

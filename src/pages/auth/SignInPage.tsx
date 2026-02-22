@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Input from "../../components/ui/Input";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import { loginUser, type LoginRequest } from "../../services/authService";
 
 type FieldErrors = {
@@ -11,6 +13,7 @@ type FieldErrors = {
 
 export default function SignInPage() {
   const navigate = useNavigate();
+  const [showPassword, setShowPassword] = useState(false);
 
   const [formData, setFormData] = useState<LoginRequest>({
     username_or_email: "",
@@ -19,7 +22,7 @@ export default function SignInPage() {
 
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null); // server/global error
+  const [error, setError] = useState<string | null>(null);
 
   const validate = (): boolean => {
     const errors: FieldErrors = {};
@@ -74,7 +77,7 @@ export default function SignInPage() {
         <div className="w-full flex justify-between items-center mb-8">
           <button
             onClick={() => navigate(-1)}
-            className="text-white opacity-90 hover:opacity-100 bg-white/10 p-1 rounded-lg transition-all"
+            className="text-white opacity-90 hover:opacity-100 transition-all"
             type="button"
           >
             <ChevronLeftIcon fontSize="large" />
@@ -86,7 +89,7 @@ export default function SignInPage() {
             </span>
             <button
               onClick={() => navigate("/signup")}
-              className="bg-white/20 hover:bg-white/30 text-white text-sm font-bold px-4 py-2 rounded-lg backdrop-blur-md transition-all"
+              className="bg-white/20 hover:bg-white/30 text-white text-sm font-bold px-4 py-2.5 rounded-lg backdrop-blur-md transition-all"
               type="button"
             >
               Get Started
@@ -100,11 +103,11 @@ export default function SignInPage() {
 
       {/* Form Card */}
       <div className="-mt-20 relative z-10 bg-white rounded-t-[3.5rem] px-8 pt-8 pb-12 min-h-150">
-        <div className="text-center mb-10">
+        <div className="text-center mb-4">
           <h2 className="text-3xl font-bold text-gray-800 tracking-tight">
             Welcome Back
           </h2>
-          <p className="text-gray-400 text-sm mt-2 font-medium">
+          <p className="text-gray-400 text-base mt-2 font-medium">
             Enter your details below
           </p>
         </div>
@@ -130,59 +133,72 @@ export default function SignInPage() {
 
           {/* Password */}
           <div>
-            <Input
-              label="Password"
-              type="password"
-              placeholder="Enter your password"
-              value={formData.password}
-              onChange={(e) => onChangePassword(e.target.value)}
-              required
-              error={!!fieldErrors.password}
-            />
+            <div className="relative">
+              <Input
+                label="Password"
+                type={showPassword ? "text" : "password"}
+                placeholder="Enter your password"
+                value={formData.password}
+                onChange={(e) => onChangePassword(e.target.value)}
+                required
+                error={!!fieldErrors.password}
+              />
+
+              {/* Eye toggle */}
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                className="absolute right-4 top-9.5 text-gray-400 hover:text-gray-600 transition"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
+              </button>
+            </div>
+
             {fieldErrors.password && (
               <p className="text-red-500 text-xs font-medium mt-2 ml-4">
                 {fieldErrors.password}
               </p>
             )}
 
-            {/* Server/global error (wrong password, user not found, etc.) */}
+            {/* Server/global error */}
             {error && (
               <div className="flex items-start gap-2 mt-3 ml-4">
                 <p className="text-red-500 text-xs font-medium">{error}</p>
               </div>
             )}
-
-            <div className="text-right">
-              <button
-                onClick={() => navigate("/forgot-password")}
-                type="button"
-                className="text-[11px] font-bold text-gray-400 hover:text-primary transition-colors mt-2"
-              >
-                Forgot your password?
-              </button>
-            </div>
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className={`w-full bg-linear-to-r from-[#5D5FEF] to-[#A5A6F6] text-white font-bold py-4 rounded-2xl shadow-lg shadow-indigo-100 transition transform active:scale-[0.97] mt-4 ${
+            className={`w-full btn-gradient text-white font-bold py-4 rounded-2xl shadow-lg shadow-indigo-100 transition transform active:scale-[0.97] mt-4 ${
               loading ? "opacity-70 cursor-not-allowed" : ""
             }`}
           >
             {loading ? "Signing in..." : "Sign in"}
           </button>
 
+          <div className="text-center">
+            <button
+              onClick={() => navigate("/forgot-password")}
+              type="button"
+              className="text-sm font-bold text-gray-400 hover:text-primary transition-colors mt-2"
+            >
+              Forgot your password?
+            </button>
+          </div>
+
           {/* Divider */}
-          <div className="relative py-6">
+          <div className="relative py-4">
             <div
               className="absolute inset-0 flex items-center"
               aria-hidden="true"
             >
               <div className="w-full border-t border-gray-100"></div>
             </div>
-            <div className="relative flex justify-center text-[10px] uppercase tracking-widest font-bold">
-              <span className="bg-white px-4 text-gray-300">
+            <div className="relative flex justify-center text-[10px] tracking-widest font-bold">
+              <span className="text-sm bg-white px-4 text-gray-300">
                 Or sign in with
               </span>
             </div>

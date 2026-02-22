@@ -5,6 +5,24 @@ import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import { registerUser } from "../../services/authService";
 import { usePasswordStrength } from "../../hooks/usePasswordStrength";
 
+type Gender = "MALE" | "FEMALE" | "OTHER";
+
+const isGender = (v: string): v is Gender =>
+  v === "MALE" || v === "FEMALE" || v === "OTHER";
+
+type FieldErrors = Partial<
+  Record<
+    | "username"
+    | "email"
+    | "password"
+    | "name"
+    | "phone_number"
+    | "age"
+    | "gender",
+    string
+  >
+>;
+
 export default function SignUpPage() {
   const navigate = useNavigate();
 
@@ -14,172 +32,273 @@ export default function SignUpPage() {
     password: "",
     name: "",
     phone_number: "",
-    age: 0,
-    gender: "MALE" as "MALE" | "FEMALE" | "OTHER",
+    age: "" as "" | number,
+    gender: "" as "" | Gender,
   });
 
   const { bars, label, color } = usePasswordStrength(formData.password);
 
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null); // global server error
+
+  const baseInputClass =
+    "w-full text-base px-5 py-3.5 bg-gray-50 dark:bg-slate-800 border-none rounded-2xl " +
+    "text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 " +
+    "focus:ring-primary/20 transition-all";
+
+  const validate = (): boolean => {
+    const errors: FieldErrors = {};
+
+    if (!formData.email.trim()) errors.email = "Email is required";
+    else if (!/^\S+@\S+\.\S+$/.test(formData.email.trim()))
+      errors.email = "Email is invalid";
+
+    if (!formData.username.trim()) errors.username = "Username is required";
+    if (!formData.name.trim()) errors.name = "Name is required";
+    if (!formData.phone_number.trim())
+      errors.phone_number = "Phone number is required";
+
+    if (formData.age === "" || Number.isNaN(Number(formData.age)))
+      errors.age = "Age is required";
+    else {
+      const age = Number(formData.age);
+      if (age < 1 || age > 120) errors.age = "Age must be between 1 and 120";
+    }
+
+    if (!formData.gender) errors.gender = "Gender is required";
+    if (!formData.password.trim()) errors.password = "Password is required";
+    else if (formData.password.length < 6)
+      errors.password = "Password must be at least 6 characters";
+
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const setField = <K extends keyof typeof formData>(
+    key: K,
+    value: (typeof formData)[K],
+  ) => {
+    setFormData((prev) => ({ ...prev, [key]: value }));
+    setFieldErrors((prev) => ({ ...prev, [key]: undefined }));
+    setError(null);
+  };
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError(null);
 
+    if (!validate()) return;
+
+    setLoading(true);
     try {
-      await registerUser(formData);
+      await registerUser({
+        username: formData.username.trim(),
+        email: formData.email.trim(),
+        password: formData.password,
+        name: formData.name.trim(),
+        phone_number: formData.phone_number.trim(),
+        age: Number(formData.age),
+        gender: formData.gender as Gender,
+      });
+
       navigate("/signin");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Registration failed");
+      const msg = err instanceof Error ? err.message : "Registration failed";
+      setError(msg);
     } finally {
       setLoading(false);
     }
   };
 
-  const baseInputClass =
-    "w-full px-5 py-3.5 bg-gray-50 dark:bg-slate-800 border-none rounded-2xl " +
-    "text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 " +
-    "focus:ring-primary/20 transition-all text-sm";
-
   return (
     <div className="h-full bg-background-light dark:bg-background-dark overflow-y-auto no-scrollbar font-display">
       {/* Header */}
-      <div className="ios-gradient h-64 pt-12 px-6 flex flex-col items-center">
+      <div className="ios-gradient h-72 w-full relative pt-12 px-6 flex flex-col items-center">
         <div className="w-full flex justify-between items-center mb-8">
           <button
             onClick={() => navigate(-1)}
-            className="text-white opacity-80 hover:opacity-100"
+            className="text-white opacity-90 hover:opacity-100 transition-all"
+            type="button"
           >
-            <ChevronLeftIcon />
+            <ChevronLeftIcon fontSize="large" />
           </button>
 
-          <div className="flex items-center gap-2">
-            <span className="text-white/80 text-sm">Already have account?</span>
+          <div className="flex items-center gap-4">
+            <span className="text-white/70 text-sm">
+              Already have an account?
+            </span>
             <button
               onClick={() => navigate("/signin")}
-              className="bg-white/20 hover:bg-white/30 text-white text-xs font-semibold px-4 py-1.5 rounded-full backdrop-blur-md"
+              className="bg-white/20 hover:bg-white/30 text-white text-sm font-bold px-4 py-2.5 rounded-lg backdrop-blur-md transition-all"
+              type="button"
             >
               Sign in
             </button>
           </div>
         </div>
-
-        <h1 className="text-3xl font-bold text-white tracking-tight">
-          Vital Care
+        <h1 className="text-5xl font-bold text-white tracking-tight mt-1">
+          VitalCare
         </h1>
       </div>
 
       {/* Sheet */}
-      <div className="-mt-16 bg-white dark:bg-card-dark rounded-t-[2.5rem] p-8 min-h-150 shadow-inner">
-        <div className="text-center mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+      <div className="-mt-20 relative z-10 bg-white rounded-t-[3.5rem] px-8 pt-8 pb-12 min-h-150">
+        <div className="text-center mb-4">
+          <h2 className="text-3xl font-bold text-gray-800 tracking-tight">
             Get started free.
           </h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <p className="text-gray-400 text-base mt-2 font-medium">
             Free forever. No credit card needed.
           </p>
         </div>
 
-        <form className="space-y-4" onSubmit={handleRegister}>
+        <form className="space-y-4" onSubmit={handleRegister} noValidate>
           {/* Email */}
-          <Input
-            label="Email Address"
-            placeholder="Enter your email"
-            type="email"
-            value={formData.email}
-            onChange={(e) =>
-              setFormData({ ...formData, email: e.target.value })
-            }
-            required
-          />
+          <div>
+            <Input
+              label="Email Address"
+              placeholder="Enter your email"
+              type="email"
+              value={formData.email}
+              onChange={(e) => setField("email", e.target.value)}
+              required
+              error={!!fieldErrors.email}
+            />
+            {fieldErrors.email && (
+              <p className="text-red-500 text-xs font-medium mt-2 ml-4">
+                {fieldErrors.email}
+              </p>
+            )}
+          </div>
+
+          {/* Username */}
+          <div>
+            <Input
+              label="Username"
+              placeholder="Enter your username"
+              value={formData.username}
+              onChange={(e) => setField("username", e.target.value)}
+              required
+              error={!!fieldErrors.username}
+            />
+            {fieldErrors.username && (
+              <p className="text-red-500 text-xs font-medium mt-2 ml-4">
+                {fieldErrors.username}
+              </p>
+            )}
+          </div>
 
           {/* Name */}
-          <Input
-            label="Your Name"
-            placeholder="Enter your full name"
-            value={formData.username}
-            onChange={(e) =>
-              setFormData({ ...formData, username: e.target.value })
-            }
-            required
-          />
-
-          {/* Phone Number */}
-          <div className="space-y-1.5">
+          <div>
             <Input
-              label="phone number"
+              label="Your Name"
+              placeholder="Enter your full name"
+              value={formData.name}
+              onChange={(e) => setField("name", e.target.value)}
+              required
+              error={!!fieldErrors.name}
+            />
+            {fieldErrors.name && (
+              <p className="text-red-500 text-xs font-medium mt-2 ml-4">
+                {fieldErrors.name}
+              </p>
+            )}
+          </div>
+
+          {/* Phone */}
+          <div>
+            <Input
+              label="Phone Number"
               type="tel"
               placeholder="+855 12 345 678"
               className={baseInputClass}
               value={formData.phone_number}
-              onChange={(e) =>
-                setFormData({ ...formData, phone_number: e.target.value })
-              }
+              onChange={(e) => setField("phone_number", e.target.value)}
               required
+              error={!!fieldErrors.phone_number}
             />
+            {fieldErrors.phone_number && (
+              <p className="text-red-500 text-xs font-medium mt-2 ml-4">
+                {fieldErrors.phone_number}
+              </p>
+            )}
           </div>
 
           {/* Age + Gender */}
           <div className="grid grid-cols-2 gap-4">
             {/* Age */}
-            <div className="space-y-1.5">
+            <div>
               <Input
-                label="age"
+                label="Age"
                 type="number"
                 placeholder="25"
                 min={1}
                 className={baseInputClass}
-                value={formData.age || ""}
+                value={formData.age}
                 onChange={(e) =>
-                  setFormData({ ...formData, age: Number(e.target.value) })
+                  setField(
+                    "age",
+                    e.target.value === "" ? "" : Number(e.target.value),
+                  )
                 }
                 required
+                error={!!fieldErrors.age}
               />
+              {fieldErrors.age && (
+                <p className="text-red-500 text-xs font-medium mt-2 ml-4">
+                  {fieldErrors.age}
+                </p>
+              )}
             </div>
 
             {/* Gender */}
-            <div className="space-y-1.5">
+            <div>
               <label className="text-xs font-semibold text-gray-400 dark:text-gray-500 ml-1 uppercase tracking-wider">
                 Gender
               </label>
-              <div className="relative">
-                <select
-                  className={`${baseInputClass} appearance-none`}
-                  value={formData.gender}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      gender: e.target.value as "MALE" | "FEMALE" | "OTHER",
-                    })
-                  }
-                  required
-                >
-                  <option value="" disabled>
-                    Select
-                  </option>
-                  <option value="MALE">Male</option>
-                  <option value="FEMALE">Female</option>
-                  <option value="OTHER">Other</option>
-                </select>
-              </div>
+
+              <select
+                className={`${baseInputClass} appearance-none ${
+                  fieldErrors.gender ? "ring-2 ring-red-400/40" : ""
+                }`}
+                value={formData.gender}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  if (isGender(v))
+                    setField("gender", v); // ✅ no any
+                  else setField("gender", ""); // for safety
+                }}
+                required
+              >
+                <option value="" disabled>
+                  Select
+                </option>
+                <option value="MALE">Male</option>
+                <option value="FEMALE">Female</option>
+                <option value="OTHER">Other</option>
+              </select>
+
+              {fieldErrors.gender && (
+                <p className="text-red-500 text-xs font-medium mt-2 ml-4">
+                  {fieldErrors.gender}
+                </p>
+              )}
             </div>
           </div>
 
-          {/* Password (keep your strength logic) */}
-          <div className="space-y-1.5">
+          {/* Password */}
+          <div>
             <div className="relative">
               <Input
-                label="password"
+                label="Password"
                 type="password"
                 className={baseInputClass}
                 placeholder="Enter a strong password"
                 value={formData.password}
-                onChange={(e) =>
-                  setFormData({ ...formData, password: e.target.value })
-                }
+                onChange={(e) => setField("password", e.target.value)}
                 required
+                error={!!fieldErrors.password}
               />
 
               {/* Strength indicator */}
@@ -213,18 +332,25 @@ export default function SignUpPage() {
                 </span>
               </div>
             </div>
+
+            {fieldErrors.password && (
+              <p className="text-red-500 text-xs font-medium mt-2 ml-4">
+                {fieldErrors.password}
+              </p>
+            )}
           </div>
 
-          {/* Error */}
+          {/* Global backend error */}
           {error && (
             <p className="text-xs text-red-500 font-medium px-2">{error}</p>
           )}
 
-          {/* Submit */}
           <button
             type="submit"
             disabled={loading}
-            className="btn-gradient w-full py-4 rounded-2xl text-white font-bold shadow-lg shadow-primary/20 active:scale-[0.98]"
+            className={`btn-gradient w-full py-4 rounded-2xl text-white font-bold shadow-lg shadow-primary/20 active:scale-[0.98] ${
+              loading ? "opacity-70 cursor-not-allowed" : ""
+            }`}
           >
             {loading ? "Creating account..." : "Sign up"}
           </button>
@@ -237,9 +363,9 @@ export default function SignUpPage() {
             >
               <div className="w-full border-t border-gray-100"></div>
             </div>
-            <div className="relative flex justify-center text-[10px] uppercase tracking-widest font-bold">
-              <span className="bg-white px-4 text-gray-300">
-                Or sign up with
+            <div className="relative flex justify-center text-[10px] tracking-widest font-bold">
+              <span className="text-sm bg-white px-4 text-gray-300">
+                Or sign in with
               </span>
             </div>
           </div>

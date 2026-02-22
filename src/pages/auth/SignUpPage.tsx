@@ -129,7 +129,7 @@ export default function SignUpPage() {
               Already have an account?
             </span>
             <button
-              onClick={() => navigate("/signin")}
+              onClick={() => navigate("/")}
               className="bg-white/20 hover:bg-white/30 text-white text-sm font-bold px-4 py-2.5 rounded-lg backdrop-blur-md transition-all"
               type="button"
             >
